@@ -1,7 +1,13 @@
 package com.chatIn.services;
 
-import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.security.authentication.FormAuthenticator;
+import org.eclipse.jetty.server.*;
+import org.eclipse.jetty.server.handler.HandlerList;
+import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.webapp.WebAppContext;
+
+import java.io.File;
 
 /**
  * Created by Sarthak on 27-10-2016.
@@ -13,37 +19,34 @@ public class StartUp {
   }
 
   public static void main(String[] args) throws Exception {
-    Server server = new Server(7070);
-    /*ServletHandler handler = new ServletHandler();
-    server.setHandler(handler);
-    final String servletName = "DefaultServlet";
-    ServletHolder servlet = new ServletHolder(servletName, Default.class);
-    handler.addServlet(servlet);
-    ServletMapping servletMapping = new ServletMapping();
-    servletMapping.setServletName(servletName);
-    servletMapping.setPathSpecs(new String[]{"", "/jsp/index.jsp", "/index.jsp"});
-    handler.addServletMapping(servletMapping);*/
-    /*ServletContextHandler handler = new ServletContextHandler(server, "/DefaultServlet");
-    handler.addServlet(Default.class, "/");
-    server.setHandler(handler);
-    server.start();*/
+    int port = 7070;
 
-    WebAppContext ctx = new WebAppContext();
-    ctx.setResourceBase("web");
-    ctx.setContextPath("/index");
-    ctx.setAttribute("org.eclipse.jetty.server.webapp.ContainerIncludeJarPattern",".*/[^/]*jstl.*\\.jar$");
-    org.eclipse.jetty.webapp.Configuration.ClassList classlist = org.eclipse.jetty.webapp.Configuration.ClassList.setServerDefault(server);
-    classlist.addAfter("org.eclipse.jetty.webapp.FragmentConfiguration", "org.eclipse.jetty.plus.webapp.EnvConfiguration", "org.eclipse.jetty.plus.webapp.PlusConfiguration");
-    classlist.addBefore("org.eclipse.jetty.webapp.JettyWebXmlConfiguration", "org.eclipse.jetty.annotations.AnnotationConfiguration");
-    server.setHandler(ctx);
+    QueuedThreadPool qtp = new QueuedThreadPool();
+    qtp.setMaxThreads(1000);
+
+    Server server = new Server(qtp);
+
+    ServerConnector serverConnector = new ServerConnector(server);
+    serverConnector.setPort(port);
+    server.addConnector(serverConnector);
+
+    WebAppContext webapp = new WebAppContext();
+    webapp.setContextPath("/");
+    webapp.getInitParams().put("org.eclipse.jetty.servlet.Default.useFileMappedBuffer", "false");
+    webapp.setInitParameter("org.eclipse.jetty.servlet.Default.dirAllowed", "false");
+    File warFilePath = new File("./web");
+    webapp.setWar(warFilePath.getAbsolutePath());
+    webapp.setParentLoaderPriority(true);
+    webapp.getSecurityHandler().setAuthenticator(new LoginFormAuthenticator());
+    webapp.getSecurityHandler().setLoginService(new ChatInLoginService());
+
+    ResourceHandler staticHandler = new ResourceHandler();
+    HandlerList handlers = new HandlerList();
+    handlers.setHandlers(new Handler[]{webapp, staticHandler});
+    server.setHandler(handlers);
+
     server.start();
     server.join();
-
-    /*startup = new StartUp();
-    *//*startup.setupAll();
-    startup.join(); // block forever till the thread dies*//*
-    startup.start();
-    System.exit(1);*/
   }
 
   public void start() {
