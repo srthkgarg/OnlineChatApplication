@@ -1,0 +1,1 @@
+commons-vfs.jar=commons-vfs2-2.0.jarcommons-codec.jar=commons-codec-1.9.jarcommons-httpclient.jar=commons-httpclient-3.1.jarcommons-logging=commons-logging-1.1.3
